@@ -25,6 +25,8 @@ float maxLaserDist = std::numeric_limits<float>::infinity();
 float minLaserDist = std::numeric_limits<float>::infinity();
 int32_t maxIndex;
 int32_t nLasers=0, desiredNLasers=0, desiredAngle=5;
+//double laserDistLeft=0;
+//double laserDistRight=0;
 
 void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
 {
@@ -41,13 +43,17 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
         for (uint32_t laser_idx = nLasers / 2 - desiredNLasers; laser_idx < nLasers / 2 + desiredNLasers; ++laser_idx){
             minLaserDist = std::min(minLaserDist, msg->ranges[laser_idx]);
             maxLaserDist = std::max(maxLaserDist, msg->ranges[laser_idx]);
+	    //laserDistRight = msg->ranges[laser_idx];
             maxIndex = laser_idx;
         }
+	    //laserDistLeft = msg->ranges[nLasers / 2 - desiredNLasers];
     }
     else {
         for (uint32_t laser_idx = 0; laser_idx < nLasers; ++laser_idx) {
             minLaserDist = std::min(minLaserDist, msg->ranges[laser_idx]);
+	    //laserDistRight = msg->ranges[laser_idx];
         }
+	    //laserDistLeft = msg->ranges[nLasers / 2 - desiredNLasers];
     }
 }
 
@@ -128,6 +134,17 @@ int main(int argc, char **argv)
             while (desiredYaw-yaw >= 0.1 || desiredYaw - yaw <= -0.1){
                 ros::spinOnce();
                 angular = wsgn * M_PI/12;
+		    
+		/*if laserDistLeft > laserDistRight {
+			angular = M_PI/6;
+		}
+		else if laserDistRight > laserDistLeft {
+			angular = -M_PI/6; 
+		}
+		else {
+			int wsgn2 = (rand() > RAND_MAX/2) ? -1 : 1;
+			angular = wsgn2 * M_PI/6;*/
+			
                 vel.angular.z = angular;
                 vel.linear.x = linear;
                 vel_pub.publish(vel);
