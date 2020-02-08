@@ -24,7 +24,7 @@ float posX=0.0, posY=0.0, yaw =0.0;
 float maxLaserDist = std::numeric_limits<float>::infinity();
 float minLaserDist = std::numeric_limits<float>::infinity();
 int32_t maxIndex;
-int32_t nLasers=0, desiredNLasers=0, desiredAngle=25;
+int32_t nLasers=0, desiredNLasers=0, desiredAngle=18;
 
 double laserDistLeftGlobal = 0.0;
 double laserDistRightGlobal = 0.0;
@@ -32,10 +32,20 @@ double laserDistCenterGlobal = 0.0;
 
 int corner = 0;         //corner = 1 if it is a corner
 
-void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg)
-{
-	//fill with your code
+bool bumperLeft = 0;
+bool bumperRight = 0;
+bool bumperCentre = 0;
+bool bumperHit = false;
+
+void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr msg){
+    if(msg->bumper == 0)
+        bumperLeft = !bumperLeft;
+    else if(msg->bumper == 1)
+        bumperCentre = !bumperCentre;
+    else if(msg->bumper == 2)
+        bumperRight = !bumperRight;
 }
+
 
 
 
@@ -55,10 +65,14 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 
     if (desiredAngle * M_PI / 180 < msg->angle_max && -desiredAngle * M_PI / 180 > msg->angle_min) {
         for (uint32_t laser_idx = nLasers / 2 - desiredNLasers; laser_idx < nLasers / 2 + desiredNLasers; ++laser_idx){
-            if(std::isnan(msg->ranges[laser_idx])) continue;
+            if(std::isnan(msg->ranges[laser_idx])) {
+            //minLaserDist = 100.0;
+            continue;
+            }
             minLaserDist = std::min(minLaserDist, msg->ranges[laser_idx]);
-            maxLaserDist = std::max(maxLaserDist, msg->ranges[laser_idx]);
-            maxIndex = laser_idx;
+
+            //maxLaserDist = std::max(maxLaserDist, msg->ranges[laser_idx]);
+            //maxIndex = laser_idx;
             //laserDistRightGlobal = (msg->ranges[laser_idx]+msg->ranges[laser_idx-1]+msg->ranges[laser_idx-2])/3;
             //laserDistRightGlobal = msg->ranges[laser_idx];
             if (!std::isnan(msg->ranges[laser_idx])){
@@ -66,7 +80,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
                 if(laserDistLeftGlobal < 0)
                     laserDistLeftGlobal = msg->ranges[laser_idx];
             }
-            if(msg->ranges[laser_idx] > 0.5) corner = 0;
+            if(msg->ranges[laser_idx] > 1) corner = 0;
         }
         
         laserDistCenterGlobal = msg->ranges[nLasers /2];
@@ -85,7 +99,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
                 if(laserDistLeftGlobal < 0)
                     laserDistLeftGlobal = msg->ranges[laser_idx];
             }
-            if(msg->ranges[laser_idx] > 0.5) corner = 0;
+            if(msg->ranges[laser_idx] > 1) corner = 0;
         
         }
         laserDistCenterGlobal = msg->ranges[nLasers /2];
@@ -122,15 +136,15 @@ double turnDirection(double laserDistLeft, double laserDistRight)
 
 double desiredYawGlobal = 0.0;
 
-double orientation(double laserDistLeftGlobal, double laserDistRightGlobal, double yaw)
+double orientation(double laserDistLeftGlobal, double laserDistRightGlobal, double yaw, int corner)
 { double desiredYaw = 0.0;
     if(corner == 1){
         desiredYaw = yaw - 3*M_PI/4;
     }else if (laserDistLeftGlobal - laserDistRightGlobal > 0.0001) {
-        desiredYaw = yaw - M_PI / 6;
+        desiredYaw = yaw - M_PI / 12;
     }
     else if (laserDistRightGlobal - laserDistLeftGlobal > 0.0001) {
-        desiredYaw = yaw + M_PI / 6;   
+        desiredYaw = yaw + M_PI / 12;   
     }
     
     if(desiredYaw > M_PI) desiredYaw -= 2 * M_PI;
@@ -173,8 +187,57 @@ int main(int argc, char **argv)
 	    // srand( time(0));
 	    // xRan=rand()%360 - 180;
 
-        ROS_INFO("minLaserDist = %f", minLaserDist);
-        if (minLaserDist > 0.5){
+        ROS_INFO("minLaserDist = %f, centerDist = %f", minLaserDist, laserDistCenterGlobal);
+
+        //bumper code
+        if(bumperCentre == 1){
+            linear = 0;
+            bumperHit = true;
+            ROS_INFO("Centre Bumper Hit");
+            vel.angular.z = angular;
+            vel.linear.x = linear;
+            vel_pub.publish(vel); 
+            //desiredYawGlobal = yaw + M_PI
+            uint64_t secondsElapsedBumper = 0;
+            while (secondsElapsedBumper <= 5 && bumperHit == true){
+                ros::spinOnce();
+                linear = -0.1;
+                angular = turnDirection(laserDistLeftGlobal, laserDistRightGlobal);
+
+                vel.angular.z = angular;
+                vel.linear.x = linear;
+                vel_pub.publish(vel);  
+                secondsElapsedBumper = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
+            }
+            bumperHit = false;
+        }
+        else if(bumperLeft == 1){
+            ROS_INFO("Left Bumper Hit");
+            while (minLaserDist<0.65){
+                ros::spinOnce();
+                linear = -0.1;
+                angular = -M_PI/6;
+                    
+                vel.angular.z = angular;
+                vel.linear.x = linear;
+                vel_pub.publish(vel);                
+            }
+        }
+        else if(bumperRight == 1){
+            ROS_INFO("Right Bumper Hit");
+            while (minLaserDist<0.65){
+                ros::spinOnce();
+                linear = -0.1;  
+                angular = M_PI/6;
+                    
+                vel.angular.z = angular;
+                vel.linear.x = linear;
+                vel_pub.publish(vel);    
+            }
+        }
+        //laser code
+
+        if (minLaserDist > 0.65){
             linear = 0.25;
             angular = 0;
         }
@@ -184,7 +247,7 @@ int main(int argc, char **argv)
             angular = 0;
             // float desiredYaw = yaw + M_PI / 4;
             // if(desiredYaw >= M_PI) desiredYaw -= 2 * M_PI;
-            desiredYawGlobal = orientation(laserDistLeftGlobal, laserDistRightGlobal, yaw);
+            desiredYawGlobal = orientation(laserDistLeftGlobal, laserDistRightGlobal, yaw, corner);
             ROS_INFO("Cornered: %d", corner);
             vel.angular.z = angular;
             vel.linear.x = linear;
@@ -210,10 +273,19 @@ int main(int argc, char **argv)
             //ROS_INFO("Out! %f", desiredYawGlobal - yaw);
         }
 
-        else if (std::isnan(minLaserDist)) desiredYawGlobal = yaw + 3*M_PI/4;
+        else if (std::isnan(minLaserDist)) {
+            while (std::isnan(minLaserDist)) {
+                ros::spinOnce();
+                linear = 0;
+                angular = M_PI / 12;
+                vel.angular.z = angular;
+                vel.linear.x = linear;
+                vel_pub.publish(vel);
+            }
+        }
 
         else ros::spinOnce();
-        ROS_INFO("distance %f", minLaserDist);    
+        //ROS_INFO("distance %f", minLaserDist);    
         vel.angular.z = angular;
         vel.linear.x = linear;
         vel_pub.publish(vel);
