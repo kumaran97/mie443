@@ -190,28 +190,32 @@ int main(int argc, char **argv)
         ROS_INFO("minLaserDist = %f, centerDist = %f", minLaserDist, laserDistCenterGlobal);
 
         //bumper code
-        if(bumperCentre == 1){
+        if(bumperCentre == 1 || bumperLeft == 1 || bumperRight == 1){
             linear = 0;
             bumperHit = true;
-            ROS_INFO("Centre Bumper Hit");
+            ROS_INFO("Bumper Hit");
             vel.angular.z = angular;
             vel.linear.x = linear;
             vel_pub.publish(vel); 
             //desiredYawGlobal = yaw + M_PI
             uint64_t secondsElapsedBumper = 0;
-            while (secondsElapsedBumper <= 5 && bumperHit == true){
+            while (secondsElapsedBumper <= 10 && bumperHit == true){
                 ros::spinOnce();
                 linear = -0.1;
-                angular = turnDirection(laserDistLeftGlobal, laserDistRightGlobal);
+                if (secondsElapsedBumper > 5) {
+			linear = 0;
+			angular = turnDirection(laserDistLeftGlobal, laserDistRightGlobal);
 
-                vel.angular.z = angular;
-                vel.linear.x = linear;
-                vel_pub.publish(vel);  
-                secondsElapsedBumper = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
-            }
-            bumperHit = false;
+                	vel.angular.z = angular;
+                	vel.linear.x = linear;
+                	vel_pub.publish(vel);  
+                }
+	     }
+             bumperHit = false;
+	     secondsElapsedBumper = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
+	     loop_rate.sleep();
         }
-        else if(bumperLeft == 1){
+        /*else if(bumperLeft == 1){
             ROS_INFO("Left Bumper Hit");
             while (minLaserDist<0.65){
                 ros::spinOnce();
@@ -235,6 +239,7 @@ int main(int argc, char **argv)
                 vel_pub.publish(vel);    
             }
         }
+	*/
         //laser code
 
         if (minLaserDist > 0.65){
