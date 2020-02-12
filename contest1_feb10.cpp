@@ -22,9 +22,7 @@ float linear = 0.0;
 float posX=0.0, posY=0.0, yaw =0.0;
 
 // ---- Laser sensor variables ---- //
-// float maxLaserDist = std::numeric_limits<float>::infinity();
 float minLaserDist = std::numeric_limits<float>::infinity();
-// int32_t maxIndex;
 int32_t nLasers=0, desiredNLasers=0, desiredAngle=22; // desiredAngle specifies the viewing range of the scanner.
 
 double laserDistLeftGlobal = 0.0;
@@ -54,7 +52,6 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     desiredNLasers = DEG2RAD(desiredAngle)/msg->angle_increment;
     
     minLaserDist = msg->ranges[nLasers / 2 - desiredNLasers];
-    maxLaserDist = msg->ranges[nLasers / 2 - desiredNLasers];
     
     laserDistLeftGlobal = -1;
     laserDistRightGlobal = -1;
@@ -84,7 +81,6 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
         for (uint32_t laser_idx = 0; laser_idx < nLasers; ++laser_idx) {
             if(std::isnan(msg->ranges[laser_idx])) continue;
             minLaserDist = std::min(minLaserDist, msg->ranges[laser_idx]);
-            maxLaserDist = std::max(maxLaserDist, msg->ranges[laser_idx]);
             
             if (!std::isnan(msg->ranges[laser_idx])){
                 laserDistRightGlobal = msg->ranges[laser_idx];
