@@ -16,22 +16,24 @@
 
 #include <chrono>
 
-
+// ----- Odometery Variables ---- //
 float angular = 0.0;
 float linear = 0.0;
 float posX=0.0, posY=0.0, yaw =0.0;
 
-float maxLaserDist = std::numeric_limits<float>::infinity();
+// ---- Laser sensor variables ---- //
+// float maxLaserDist = std::numeric_limits<float>::infinity();
 float minLaserDist = std::numeric_limits<float>::infinity();
-int32_t maxIndex;
-int32_t nLasers=0, desiredNLasers=0, desiredAngle=22;
+// int32_t maxIndex;
+int32_t nLasers=0, desiredNLasers=0, desiredAngle=22; // desiredAngle specifies the viewing range of the scanner.
 
 double laserDistLeftGlobal = 0.0;
 double laserDistRightGlobal = 0.0;
 double laserDistCenterGlobal = 0.0;
 
-int corner = 0;         //corner = 1 if it is a corner
+int corner = 0;         //corner = 1 if it is a corner.
 
+// ---- Bumper sensor variables ---- //
 bool bumperLeft = 0;
 bool bumperRight = 0;
 bool bumperCentre = 0;
@@ -45,9 +47,6 @@ void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr msg){
     else if(msg->bumper == 2)
         bumperRight = !bumperRight;
 }
-
-
-
 
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
@@ -108,6 +107,7 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr&msg)
     tf::getYaw(msg->pose.pose.orientation);
 }
 
+// ---- Determining the direction of turn ---- //
 double turnDirection(double laserDistLeft, double laserDistRight)
 {
     double angular1 = 0.0;
@@ -124,6 +124,7 @@ double turnDirection(double laserDistLeft, double laserDistRight)
 
 }
 
+// ---- Sets the desired orientation of the turtlebot ---- //
 double desiredYawGlobal = 0.0;
 
 double orientation(double laserDistLeftGlobal, double laserDistRightGlobal, double yaw, int corner)
@@ -167,7 +168,7 @@ int main(int argc, char **argv)
 
     while(ros::ok() && secondsElapsed <= 480) {
         ros::spinOnce();
-        if ((secondsElapsed%60 == 0 || secondsElapsed == 0) && corner == 0){
+        if ((secondsElapsed%60 == 0 || secondsElapsed == 0) && corner == 0){     // Spin 270 degrees at the start and after every minute.
             
             desiredYawGlobal = yaw + 3*M_PI / 2;
             if(desiredYawGlobal > M_PI) desiredYawGlobal -= 2 * M_PI;
@@ -191,7 +192,7 @@ int main(int argc, char **argv)
 
         ROS_INFO("minLaserDist = %f, centerDist = %f", minLaserDist, laserDistCenterGlobal);
 
-        //bumper code
+        // ---- Bumper detection and turning ---- //
         if(bumperCentre == 1 || bumperLeft == 1 || bumperRight == 1){
             linear = 0;
             bumperHit = true;
@@ -224,7 +225,7 @@ int main(int argc, char **argv)
             
             loop_rate.sleep();
         }
-
+	// ---- Laser detection and turning ---- //
         if (minLaserDist > 0.65){
             linear = 0.2;
             angular = 0;
@@ -274,7 +275,6 @@ int main(int argc, char **argv)
         vel.linear.x = linear;
         vel_pub.publish(vel);
 
-        // The last thing to do is to update the timer.
         secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now()-start).count();
         loop_rate.sleep();
     }
