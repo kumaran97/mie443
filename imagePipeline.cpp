@@ -183,17 +183,56 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
     {
         /***YOUR CODE HERE***/
         //write for loop to do for each template
-        for (int i = 0; i < 3; i++)
-        {
-            Mat img_object = boxes.templates[i];
-            Mat img_scene = img;
-            double score = imgScoring(img_object, img_scene);
-            printf("score %lf", score);
-            if(score >= 3000)
-                printf("raisin bran %d \n", i);
-        }
+        int j = 0;
+        int weight[4] = 0;
+        double raisinbranCredit = 0;
+        double cinnamoncrunchCredit = 0;
+        double ricecrispiesCredit = 0;
+        double blank = 0;
+        while (j<6){
+            for (int i = 0; i < 3; i++)
+            {
+                Mat img_object = boxes.templates[i];
+                Mat img_scene = img;
+                double score = imgScoring(img_object, img_scene);
+                printf("score %lf", score);
+                if(i==0 && score >= 3000){
+                    weight[0] += score;
+                    //raisinbranCredit++;
+                    printf("RB %d \n", i);}
+                elseif(i==1 && score>=3000){
+                    weight[1] += score;
+                    //cinnamoncrunchCredit++;
+                    printf("CC %d \n", i);}
+                elseif(i==2 && score>=3000){
+                    weight[2] += score;
+                    //ricecrispiesCredit++;
+                    printf("RC %d \n", i);}
+                else{
+                    weight[3] += score;
+                    blank++;
+                    printf("empty");}
+            }
         cv::imshow("view", img);
         cv::waitKey(10);
+        j++;            
+        }
+        int max_index = 0;
+        int max = 0;
+        for (i=0, i<4, i++){ 
+            if (weight[i] > max){
+                max = weight[i];
+                max_index = i;}
+        }
+        if (max_index == 0)
+            printf("raisin bran %d \n", i);
+        elseif (max_index == 1)
+            printf("cinnamon crunch %d \n", i);
+        elseif (max_index == 2)
+            printf("rice crispies %d \n", i);
+        else
+            printf("Blank Scene, put the right cereal box.");
+        
     }
     return template_id;
 }
