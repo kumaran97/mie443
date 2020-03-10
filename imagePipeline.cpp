@@ -184,7 +184,7 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
         /***YOUR CODE HERE***/
         //write for loop to do for each template
         int j = 0;
-        int weight[4] = 0;
+        int weight[4] = {0};
         double raisinbranCredit = 0;
         double cinnamoncrunchCredit = 0;
         double ricecrispiesCredit = 0;
@@ -199,19 +199,19 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
                 if(i==0 && score >= 3000){
                     weight[0] += score;
                     //raisinbranCredit++;
-                    printf("RB %d \n", i);}
-                elseif(i==1 && score>=3000){
+                    printf("RB %d & score %d \n", i, weight[0]);}
+                else if(i==1 && score>=3000){
                     weight[1] += score;
                     //cinnamoncrunchCredit++;
-                    printf("CC %d \n", i);}
-                elseif(i==2 && score>=3000){
+                    printf("CC %d & score %d \n", i, weight[1]);}
+                else if(i==2 && score>=3000){
                     weight[2] += score;
                     //ricecrispiesCredit++;
-                    printf("RC %d \n", i);}
+                    printf("RC %d & score %d \n", i, weight[2]);}
                 else{
-                    weight[3] += score;
+                    weight[3] += (score*300);
                     blank++;
-                    printf("empty");}
+                    printf("empty image & score %d \n", weight[3]);}
             }
         cv::imshow("view", img);
         cv::waitKey(10);
@@ -219,17 +219,17 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
         }
         int max_index = 0;
         int max = 0;
-        for (i=0, i<4, i++){ 
+        for (int i=0; i<4; i++){ 
             if (weight[i] > max){
                 max = weight[i];
                 max_index = i;}
         }
         if (max_index == 0)
-            printf("raisin bran %d \n", i);
-        elseif (max_index == 1)
-            printf("cinnamon crunch %d \n", i);
-        elseif (max_index == 2)
-            printf("rice crispies %d \n", i);
+            printf("raisin bran");
+        else if (max_index == 1)
+            printf("cinnamon crunch");
+        else if (max_index == 2)
+            printf("rice crispies");
         else
             printf("Blank Scene, put the right cereal box.");
         
