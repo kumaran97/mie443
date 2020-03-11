@@ -42,15 +42,29 @@ int main(int argc, char** argv) {
     //Navigation::moveToGoal(-1.404,2.5,-1.606);
     while(ros::ok()) {
         ros::spinOnce();
-        // /***YOUR CODE HERE***/
-        // for(int i = 0; i < 5;i++) {
-        //     phiGoal = boxes.coords[i][2] - 2*PI;
-        //     xGoal = boxes.coords[i][0] - 0.7*cos(phiGoal);
-        //     yGoal = boxes.coords[i][1] - 0.7*sin(phiGoal);
-        //     Navigation::moveToGoal(xGoal,yGoal,phiGoal);
-        // //std::cout << i << " Goal: " << i << std:endl;
+        // /***YOUR CODE HERE***
+       
+        //Set locations to travel to in order to take image of boxes
+        float destination[] = {0,0,0};
+        destination[0][0] = startX;
+        destination[0][1] = startY;
+        destination[0][2] = startPhi;
+        for(int i = 0; i < 5;i++) {
+            phiGoal = boxes.coords[i][2] - 2*PI;
+            xGoal = boxes.coords[i][0] - 0.7*cos(phiGoal);
+            yGoal = boxes.coords[i][1] - 0.7*sin(phiGoal);
+            destination[i+1][0] = xGoal;
+            destination[i+1][1] = yGoal;
+            destination[i+1][2] = phiGoal;
+        }
         
-        // }
+        // Create array to store distance between all vertices
+        float distanceArray[6][6];
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                distanceArray[i][j] = sqrt((destination[j][0] - destination[i][0])^2 + (destination[j][1] - destination[i][1])^2);
+            }
+        }
 
         // Navigation::moveToGoal(startX,startY,startPhi);
         imagePipeline.getTemplateID(boxes);
