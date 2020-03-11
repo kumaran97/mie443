@@ -46,8 +46,8 @@ double imgScoring(Mat img_object, Mat img_scene)
         if (dist > max_dist)
             max_dist = dist;
     }
-    printf("-- Max dist : %f \n", max_dist);
-    printf("-- Min dist : %f \n", min_dist);
+    //printf("-- Max dist : %f \n", max_dist);
+    //printf("-- Min dist : %f \n", min_dist);
 
     std::vector<DMatch> good_matches;
     for (int i = 0; i < descriptors_object.rows; i++)
@@ -184,54 +184,64 @@ int ImagePipeline::getTemplateID(Boxes &boxes)
         /***YOUR CODE HERE***/
         //write for loop to do for each template
         int j = 0;
-        int weight[4] = {0};
+        double weight[4] = {0};
         double raisinbranCredit = 0;
         double cinnamoncrunchCredit = 0;
         double ricecrispiesCredit = 0;
         double blank = 0;
-        while (j<6){
+        while (j < 6)
+        {
             for (int i = 0; i < 3; i++)
             {
                 Mat img_object = boxes.templates[i];
                 Mat img_scene = img;
                 double score = imgScoring(img_object, img_scene);
-                printf("score %lf", score);
-                if(i==0 && score >= 3000){
+                printf("score  %d  scored %lf\n", i, score);
+                if (i == 0 && score >= 30000)
+                {
                     weight[0] += score;
                     //raisinbranCredit++;
-                    printf("RB %d & score %d \n", i, weight[0]);}
-                else if(i==1 && score>=3000){
+                    //printf("RB %d & score %d \n", i, weight[0]);
+                }
+                else if (i == 1 && score >= 30000)
+                {
                     weight[1] += score;
                     //cinnamoncrunchCredit++;
-                    printf("CC %d & score %d \n", i, weight[1]);}
-                else if(i==2 && score>=3000){
+                    ///printf("CC %d & score %d \n", i, weight[1]);
+                }
+                else if (i == 2 && score >= 30000)
+                {
                     weight[2] += score;
                     //ricecrispiesCredit++;
-                    printf("RC %d & score %d \n", i, weight[2]);}
-                else{
-                    weight[3] += (score*300);
+                    //printf("RC %d & score %d \n", i, weight[2]);
+                }
+                else
+                {
+                    weight[3] += (score * 300);
                     blank++;
-                    printf("empty image & score %d \n", weight[3]);}
+                    //printf("empty image & score %d \n", weight[3]);
+                }
             }
-        cv::imshow("view", img);
-        cv::waitKey(10);
-        j++;            
+            cv::imshow("view", img);
+            cv::waitKey(10);
+            j++;
         }
-        int max_index = 0;
-        int max = 0;
+        int max_index = 3;
+        double max = 0;
         for (int i=0; i<4; i++){ 
             if (weight[i] > max){
                 max = weight[i];
-                max_index = i;}
+                max_index = i;
+            }
         }
         if (max_index == 0)
-            printf("raisin bran");
+            printf("raisin bran %lf \n", max);
         else if (max_index == 1)
-            printf("cinnamon crunch");
+            printf("cinnamon crunch %lf \n", max);
         else if (max_index == 2)
-            printf("rice crispies");
+            printf("rice crispies %lf \n", max);
         else
-            printf("Blank Scene, put the right cereal box.");
+            printf("Blank Scene, put the right cereal box. %lf \n", max);
         
     }
     return template_id;
