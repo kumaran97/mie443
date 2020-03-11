@@ -14,16 +14,16 @@ int main(int argc, char** argv) {
     // Setup ROS.
     ros::init(argc, argv, "contest2");
     ros::NodeHandle n;
-    // Robot pose object + subscriber.
-    // RobotPose robotPose(0,0,0);
-    // ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
+    //Robot pose object + subscriber.
+    RobotPose robotPose(0,0,0);
+    ros::Subscriber amclSub = n.subscribe("/amcl_pose", 1, &RobotPose::poseCallback, &robotPose);
     
-    // while (robotPose.x==0 && robotPose.y==0 && robotPose.phi==0){
-    //     ros::spinOnce();
-    // }
-    // float startX = robotPose.x;
-    // float startY = robotPose.y;
-    // float startPhi = robotPose.phi;
+    while (robotPose.x==0 && robotPose.y==0 && robotPose.phi==0){
+        ros::spinOnce();
+    }
+    float startX = robotPose.x;
+    float startY = robotPose.y;
+    float startPhi = robotPose.phi;
     // // Initialize box coordinates and templates
     Boxes boxes; 
     if(!boxes.load_coords() || !boxes.load_templates()) {
@@ -36,24 +36,45 @@ int main(int argc, char** argv) {
                   << boxes.coords[i][2] << std::endl;
     }
     // Initialize image objectand subscriber.
-    ImagePipeline imagePipeline(n);
+    //ImagePipeline imagePipeline(n);
     // Execute strategy.
     
-    //Navigation::moveToGoal(-1.404,2.5,-1.606);
     while(ros::ok()) {
         ros::spinOnce();
         // /***YOUR CODE HERE***/
-        // for(int i = 0; i < 5;i++) {
-        //     phiGoal = boxes.coords[i][2] - 2*PI;
-        //     xGoal = boxes.coords[i][0] - 0.7*cos(phiGoal);
-        //     yGoal = boxes.coords[i][1] - 0.7*sin(phiGoal);
-        //     Navigation::moveToGoal(xGoal,yGoal,phiGoal);
-        // //std::cout << i << " Goal: " << i << std:endl;
         
-        // }
+        //Set locations to travel to in order to take image
+        float destination[5][3] = {0};
+        destination[0][0] = startX;
+        destination[0][1] = startY;
+        destination[0][2] = startPhi;
+        int completed[5] = 0;
+        
+        for(int i = 0; i < 5;i++) {
+            phiGoal = boxes.coords[i][2] - 2*PI;
+            xGoal = boxes.coords[i][0] - 0.7*cos(phiGoal);
+            yGoal = boxes.coords[i][1] - 0.7*sin(phiGoal);
+            destination[i+1][0] = xGoal;
+            destination[i+1][1] = yGoal;
+            destination[i+1][2] = phiGoal;
+            completed[i] = 0;
+            //Navigation::moveToGoal(xGoal,yGoal,phiGoal);
+        // //std::cout << i << " Goal: " << i << std:endl;
 
-        // Navigation::moveToGoal(startX,startY,startPhi);
-        imagePipeline.getTemplateID(boxes);
+        // Create array to store distance between all vertices
+        double distanceArray[6][6];
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                distanceArray[i][j] = sqrt((destination[j][0] - destination[i][0])*(destination[j][0] - destination[i][0]) + 
+                (destination[j][1] - destination[i][1])*(destination[j][1] - destination[i][1]));
+                std::cout << distanceArray[i][j];
+            }
+        }
+        
+        }
+
+        Navigation::moveToGoal(startX,startY,startPhi);
+        //imagePipeline.getTemplateID(boxes);
         ros::Duration(0.01).sleep();
         //break;
     }
