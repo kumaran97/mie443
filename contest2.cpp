@@ -10,6 +10,45 @@ double yGoal = 0;
 double phiGoal = 0;
 double PI = 1.570795;
 
+int cost = 0;
+int completed[5] = 0;
+
+int least(int c) {
+    int nc = 999;
+    int min = 999;
+    int kmin = 0;
+    
+    for (int i = 0; i < 5; i++) {
+        if ((distanceArray[c][i]!=0)&&(completed[i]==0))
+            if (distanceArray[c][i] + distanceArray[i][c] < min) {
+                min = distanceArray[i][0]+distanceArray[c][i];
+                kmin = distanceArray[c][i];
+                nc = i;
+            }
+    }
+    
+    if(min!=999) {
+        cost+=kmin;
+    }
+    return nc;
+}
+
+int minCost(int city) {
+
+    int ncity = 0;
+    int dest = 0;
+    completed[city] = 1;
+    
+    ncity = least(city);
+    if (ncity = 999) {
+        ncity = 0;
+        dest = ncity + 1;
+        return dest;
+        cost += distanceArray[city][ncity];
+    }
+    mincost(ncity);
+}
+
 int main(int argc, char** argv) {
     // Setup ROS.
     ros::init(argc, argv, "contest2");
@@ -48,7 +87,6 @@ int main(int argc, char** argv) {
         destination[0][0] = startX;
         destination[0][1] = startY;
         destination[0][2] = startPhi;
-        int completed[5] = 0;
         
         for(int i = 0; i < 5;i++) {
             phiGoal = boxes.coords[i][2] - 2*PI;
